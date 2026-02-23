@@ -1,1 +1,160 @@
-<html><body>public_widget placeholder</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JOM26 Veg Pledge - Widget Integration</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(to bottom, #E3F2FD, #ffffff);
+      padding: 2rem 1rem;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .header h1 {
+      color: #2E7D32;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .header p {
+      color: #757575;
+      font-size: 1.1rem;
+    }
+    
+    .banner {
+      background: linear-gradient(135deg, #FF9800, #F57C00);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    
+    .banner h3 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .widget-section {
+      margin-bottom: 3rem;
+    }
+    
+    .widget-section h2 {
+      color: #2E7D32;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    
+    .widget-section p {
+      color: #757575;
+      margin-bottom: 1rem;
+    }
+    
+    .iframe-container {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+    }
+    
+    .iframe-container iframe {
+      width: 100%;
+      border: none;
+      display: block;
+    }
+    
+    .info-box {
+      background: #E3F2FD;
+      padding: 1.5rem;
+      border-radius: 12px;
+      border-left: 4px solid #2196F3;
+      margin: 1.5rem 0;
+    }
+    
+    .info-box h4 {
+      color: #1976D2;
+      margin-bottom: 0.5rem;
+    }
+    
+    .info-box ul {
+      margin-left: 1.5rem;
+      color: #424242;
+    }
+    
+    .info-box li {
+      margin-bottom: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🥕 JOM26 Veg Pledge Widgets</h1>
+      <p>Together we're growing a healthier community!</p>
+    </div>
+    
+    <div class="banner">
+      <h3>🍄 Campaign Live! Growing Our Community Garden</h3>
+      <p>Every veg pledge makes a difference. Join thousands making healthier choices together!</p>
+    </div>
+    
+    <!-- Veg Patch Widget -->
+    <div class="widget-section">
+      <h2>The Growing Vegetable Patch</h2>
+      <p>Watch our community garden grow as more people make veg pledges.</p>
+      
+      <div class="iframe-container">
+        <iframe src="patch.html" height="650" frameborder="0" scrolling="no" title="JOM26 Veg Patch Progress"></iframe>
+      </div>
+    </div>
+    
+    <!-- Form Widget -->
+    <div class="widget-section">
+      <h2>Make Your Veg Pledge</h2>
+      <p>Take the pledge to eat more vegetables and help us grow our community garden!</p>
+      
+      <div class="iframe-container">
+        <iframe src="form.html" height="600" frameborder="0" scrolling="no" title="JOM26 Veg Pledge Form"></iframe>
+      </div>
+    </div>
+    
+    <div class="info-box">
+      <h4>🔗 How It Works:</h4>
+      <ul>
+        <li><strong>Form Widget:</strong> Users fill out this form to make their veg pledge</li>
+        <li><strong>Auto-Update:</strong> When a pledge is submitted, it automatically updates the veg patch above via postMessage</li>
+        <li><strong>Multiple Patches:</strong> You can embed multiple veg patch widgets on different pages - they all sync together in real-time</li>
+        <li><strong>No Dependencies:</strong> Each widget loads independently - robust and flexible</li>
+      </ul>
+    </div>
+    
+    <div class="info-box" style="background: #FFF3E0; border-left-color: #F57C00;">
+      <h4>💡 Pro Tip:</h4>
+      <p>Embed the veg patch on multiple pages across your site. Every submission from any page will update ALL patches automatically!</p>
+    </div>
+  </div>
+</body>
+</html>
