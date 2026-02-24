@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JOM26 Veg Patch Progress</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: transparent;
+    }
+    
+    .patch-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+    }
+    
+    .patch-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .patch-header h2 {
+      color: #2E7D32;
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .patch-subtitle {
+      color: #757575;
+      font-size: 1.1rem;
+    }
+    
+    .patch-subtitle strong {
+      color: #4CAF50;
+    }
+    
+    .veg-patch {
+      background: linear-gradient(to bottom, #E3F2FD, #8D6E63);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: center;
+      box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    #vegPatchCanvas {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .progress-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .stat-card {
+      background: #FAFAFA;
+      padding: 1.5rem;
+      border-radius: 12px;
+      text-align: center;
+      border: 2px solid #E0E0E0;
+    }
+    
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #4CAF50;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #757575;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 15px;
+      overflow: hidden;
+      border: 2px solid #4CAF50;
+      margin: 1.5rem 0;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #81C784, #4CAF50);
+      transition: width 1s ease-out;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      color: white;
+      font-weight: bold;
+    }
+    
+    @media (max-width: 600px) {
+      .patch-container {
+        padding: 1rem;
+      }
+      
+      .progress-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="patch-container">
+    <div class="patch-header">
+      <h2>🥕 The Growing Vegetable Patch</h2>
+      <p class="patch-subtitle">Seeds planted and watered: <strong id="total-tokens">0</strong> | Goal: <strong id="goal-value">100,000</strong></p>
+    </div>
+    
+    <div class="veg-patch">
+      <canvas id="vegPatchCanvas" width="800" height="400"></canvas>
+    </div>
+    
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width: 0%">
+        <span id="progress-text">0%</span>
+      </div>
+    </div>
+    
+    <div class="progress-stats">
+      <div class="stat-card">
+        <div class="stat-value" id="percentage-complete">0%</div>
+        <div class="stat-label">Complete</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="tokens-to-goal">100,000</div>
+        <div class="stat-label">Seeds & Water to Goal</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-submissions">0</div>
+        <div class="stat-label">Total Pledges</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="veg-patch-standalone.js"></script>
+  <script src="patch-widget-app.js"></script>
+  <script type="module" src="./widget-config.js"></script>
+  <script type="module">
+    import { startTotaliserListener, fetchSubmissionCount } from './patch-widget-listener.js';
+
+    function updatePatchUI({ total, goal }) {
+      const percent = Math.min(100, Math.round((total / Math.max(1, goal)) * 100));
+
+      const el = (id) => document.getElementById(id);
+      if (el('total-tokens'))        el('total-tokens').innerText  = total;
+      if (el('goal-value'))          el('goal-value').innerText    = goal;
+      if (el('percentage-complete')) el('percentage-complete').innerText = percent + '%';
+      if (el('tokens-to-goal'))      el('tokens-to-goal').innerText = Math.max(0, goal - total);
+      if (el('progress-text'))       el('progress-text').innerText = percent + '%';
+      if (el('progress-fill'))       el('progress-fill').style.width = percent + '%';
+
+      if (typeof window.updateVegPatch === 'function') {
+        window.updateVegPatch(percent);
+      }
+    }
+
+    startTotaliserListener(updatePatchUI);
+    fetchSubmissionCount().then(updatePatchUI);
+  </script>
+</body>
+</html>
