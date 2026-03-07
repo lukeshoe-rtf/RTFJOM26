@@ -61,13 +61,17 @@ class TokenBoxes {
   }
   
   /**
-   * Trigger a burst of 1–5 tokens falling in parallel with small random delays.
+   * Trigger a burst of 1–5 tokens with guaranteed staggered start times.
+   * Each token waits an extra 150–300ms after the previous one starts,
+   * so they're always visually separated while still overlapping mid-fall.
    */
   triggerBurst(boxNumber) {
     const count = Math.floor(Math.random() * 5) + 1;
+    let cumulativeDelay = 0;
     for (let i = 0; i < count; i++) {
-      const delay = Math.random() * 400;
-      setTimeout(() => this.animateTokenFall(boxNumber), delay);
+      const gap = 150 + Math.random() * 150; // 150–300ms between each token
+      setTimeout(() => this.animateTokenFall(boxNumber), cumulativeDelay);
+      cumulativeDelay += gap;
     }
   }
 
