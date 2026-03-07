@@ -1,6 +1,6 @@
 
 import { db } from './widget-config.js';
-import { doc, onSnapshot, collection, getCountFromServer } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 let previousBoxCounts = null;
 
@@ -49,6 +49,9 @@ export function startBoxTotaliserListener(updateFn) {
 }
 
 export async function fetchSubmissionCount() {
-  const snap = await getCountFromServer(collection(db, 'submissions'));
-  return snap.data().count || 0;
+  // Reads submission_count from public/totaliser — no auth required.
+  // The submissions collection itself now requires auth for reads (security rule),
+  // so we track the count here instead to keep the patch widget working publicly.
+  const snap = await getDoc(doc(db, 'public', 'totaliser'));
+  return snap.exists() ? (snap.data().submission_count || 0) : 0;
 }
