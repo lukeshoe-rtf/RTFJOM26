@@ -2,7 +2,7 @@
 // Firestore submission + totaliser update (Option C)
 import { db } from './widget-config.js';
 import {
-  collection, addDoc, query, where, getDocs,
+  collection, addDoc,
   serverTimestamp, doc, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -24,12 +24,9 @@ function calculateTokens(userType, participantsCount) {
 }
 
 export async function submitPledge({ name, email, pledge, userType, familySize, participantsCount, newsletter, boxNumber }) {
-  // Optional duplicate check (schools are exempt)
-  if ((userType || '').toLowerCase() !== 'school') {
-    const dupQ = query(collection(db, 'submissions'), where('email', '==', email));
-    const dupSnap = await getDocs(dupQ);
-    if (!dupSnap.empty) throw new Error('This email has already submitted a pledge.');
-  }
+  // Note: duplicate email check removed — submissions are now auth-read-only,
+  // so an unauthenticated query would be denied. Duplicates can be filtered
+  // at export time in the admin console.
 
   const tokens = calculateTokens(userType, participantsCount || familySize);
   const boxNum = parseInt(boxNumber) || 1;
@@ -57,11 +54,15 @@ export async function submitPledge({ name, email, pledge, userType, familySize, 
 
     const currentBoxCount = current[boxKey] || 0;
     const currentTotal = current.total_tokens || 0;
+    const currentSubmissions = current.submission_count || 0;
 
-    // Use set+merge so the document is created automatically if it doesn't exist yet
+    // Use set+merge so the document is created automatically if it doesn't exist yet.
+    // submission_count lives here (not on the submissions collection) so the patch
+    // widget can read it without requiring auth.
     t.set(totalRef, {
       [boxKey]: currentBoxCount + tokens,
-      total_tokens: currentTotal + tokens
+      total_tokens: currentTotal + tokens,
+      submission_count: currentSubmissions + 1
     }, { merge: true });
   });
 
