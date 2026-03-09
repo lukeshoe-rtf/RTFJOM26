@@ -101,8 +101,11 @@ window.addEventListener('message', (event) => {
   const data = event.data;
   
   if (data.type === 'PLEDGE_SUBMITTED') {
-    // New pledge submitted - add tokens to the specified box
-    addTokens(data.boxNumber || 1, data.tokens || 1);
+    // Animation handled by token-boxes-standalone.js.
+    // Counter is intentionally NOT updated here — Firestore's onSnapshot
+    // (syncFromFirestore) is the sole source of truth for the counter.
+    // Calling addTokens here would cause a 2x count because Firestore's
+    // optimistic local writes fire onSnapshot BEFORE the postMessage arrives.
   } else if (data.type === 'BOXES_UPDATE') {
     // Another box widget updated - sync state
     boxState.boxCounts = data.boxCounts || boxState.boxCounts;
