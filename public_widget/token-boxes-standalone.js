@@ -28,6 +28,10 @@ class TokenBoxes {
       if (event.data.type === 'PLEDGE_SUBMITTED') {
         const boxNum = event.data.boxNumber || 1;
         const count = event.data.tokens || 1;
+        // First-one-wins: if Firestore already triggered the animation for this
+        // box within the last 10 s, skip — otherwise claim it and play.
+        const lastAnimated = this.recentlyAnimated[boxNum] || 0;
+        if (Date.now() - lastAnimated < 10000) return;
         this.recentlyAnimated[boxNum] = Date.now();
         this.triggerBurst(boxNum, count);
       }
@@ -144,11 +148,14 @@ class TokenBoxes {
    * (avoids a double animation when form + patch are both embedded in index.html).
    */
   triggerAnimationFromFirestore(boxNumber, amount) {
-    const lastPostMessage = this.recentlyAnimated[boxNumber] || 0;
-    if (Date.now() - lastPostMessage < 10000) {
-      console.log('[JOM26] Animation suppressed for box', boxNumber, '(postMessage handled it)');
+    // First-one-wins: if postMessage already triggered the animation for this
+    // box within the last 10 s, skip — otherwise claim it and play.
+    const lastAnimated = this.recentlyAnimated[boxNumber] || 0;
+    if (Date.now() - lastAnimated < 10000) {
+      console.log('[JOM26] Animation suppressed for box', boxNumber, '(already handled)');
       return;
     }
+    this.recentlyAnimated[boxNumber] = Date.now();
     console.log('[JOM26] Firestore triggering burst for box', boxNumber, 'amount', amount);
     this.triggerBurst(boxNumber, amount);
   }
