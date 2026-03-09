@@ -131,6 +131,16 @@
       </div>
     </div>
 
+    <!-- Shout Out Widget -->
+    <div class="widget-section">
+      <h2>📣 Shout Out!</h2>
+      <p>Celebrating schools, organisations and community groups taking part in the campaign.</p>
+
+      <div class="iframe-container" style="border-radius:12px; overflow:hidden; box-shadow:0 3px 12px rgba(230,81,0,0.25);">
+        <iframe id="shoutout-iframe" src="shoutout.html" height="90" frameborder="0" scrolling="no" title="JOM26 Shout Out"></iframe>
+      </div>
+    </div>
+
     <!-- Form Widget -->
     <div class="widget-section">
       <h2>Submit Your Token</h2>
@@ -153,9 +163,10 @@
   </div>
 
   <script>
-    // Forward postMessages between iframes so the form and patch widgets communicate
-    var patchIframe = document.getElementById('patch-iframe');
-    var formIframe = document.getElementById('form-iframe');
+    // Forward postMessages between iframes so all widgets communicate
+    var patchIframe   = document.getElementById('patch-iframe');
+    var formIframe    = document.getElementById('form-iframe');
+    var shoutoutIframe = document.getElementById('shoutout-iframe');
 
     window.addEventListener('message', function(event) {
       var data = event.data;
@@ -165,6 +176,13 @@
       if (data.type === 'PLEDGE_SUBMITTED') {
         if (patchIframe && patchIframe.contentWindow) {
           patchIframe.contentWindow.postMessage(data, '*');
+        }
+      }
+
+      // Forward SHOUTOUT_ENTRY from form iframe to shoutout iframe
+      if (data.type === 'SHOUTOUT_ENTRY') {
+        if (shoutoutIframe && shoutoutIframe.contentWindow) {
+          shoutoutIframe.contentWindow.postMessage(data, '*');
         }
       }
 
