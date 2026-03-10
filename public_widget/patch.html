@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JOM26 Token Collection</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: transparent;
+    }
+
+    /* ── Widget container ────────────────────────────────────────────────
+       Exact spec: 1284 × 374 px, transparent.
+       padding-top  = sky depth (191 px) — tokens fall through this space.
+       padding-bottom = shadow room (10 px).
+       Using padding (not margin on child) prevents CSS margin-collapse,
+       which would cause .boxes-row to sit at y=0 instead of y=191.
+       Content area = 374 − 191 − 10 = 173 px = exact box height.
+       Canvas at position:absolute; top:0 anchors to the outer padding
+       edge (y=0) so it covers the full 374 px including the sky.
+    ─────────────────────────────────────────────────────────────────── */
+    .boxes-container {
+      position: relative;
+      width: 1284px;
+      height: 374px;
+      background: transparent;
+      padding-top: 191px;
+      padding-bottom: 10px;
+      overflow: visible;
+    }
+
+    /* Canvas — z-index 2, above everything so it always renders.
+       Token drawing is gated in JS: tokens are only drawn while y < 190
+       (the sky), so they vanish at the box top edge as if entering it. */
+    #tokenCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* ── Boxes row ───────────────────────────────────────────────────────
+       No margin-top needed — the sky depth is provided by padding-top
+       on .boxes-container (191 px), which cannot margin-collapse.
+       space-between on 1284 px with 5 × 156 px items ≈ 126 px gaps.
+    ─────────────────────────────────────────────────────────────────── */
+    .boxes-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+    }
+
+    /* Wrapper — applies the combined drop-shadow to both rectangles.
+       Shadow spec: colour #063941 50%, angle ~99°, distance 4, blur 4. */
+    .box-wrapper {
+      display: flex;
+      flex-direction: column;
+      width: 156px;
+      border-radius: 14px;
+      box-shadow: 1px 4px 4px 0px rgba(6, 57, 65, 0.5);
+    }
+
+    /* Rectangle 1 — 156 × 113 px, gradient per box, rounded top corners.
+       Icon sits centred horizontally, just below vertical centre (pad-top). */
+    .token-box {
+      width: 156px;
+      height: 113px;
+      border-radius: 14px 14px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Per-box gradients at 137° */
+    .token-box[data-box="1"] { background: linear-gradient(137deg, #ffd342 0%, #ffbf42 100%); }
+    .token-box[data-box="2"] { background: linear-gradient(137deg, #eb8f05 0%, #c35b0f 100%); }
+    .token-box[data-box="3"] { background: linear-gradient(137deg, #50d867 0%, #39b04d 100%); }
+    .token-box[data-box="4"] { background: linear-gradient(137deg, #39b083 0%, #1d9064 100%); }
+    .token-box[data-box="5"] { background: linear-gradient(137deg, #075966 0%, #063941 100%); }
+
+    /* Icon — 90 × 90 px, contained within the gradient rectangle */
+    .box-icon {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Rectangle 2 — 156 × 60 px white counter, rounded bottom corners */
+    .box-counter {
+      width: 156px;
+      height: 60px;
+      background: #ffffff;
+      border-radius: 0 0 14px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .counter-value {
+      font-size: 33pt;
+      font-weight: 700;
+      color: #063941;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="boxes-container">
+
+    <!-- Canvas — behind the boxes; renders falling veggie token images -->
+    <canvas id="tokenCanvas"></canvas>
+
+    <!-- Five token collection boxes -->
+    <div class="boxes-row">
+      <div class="box-wrapper">
+        <div class="token-box" data-box="1">
+          <img class="box-icon" src="assets/Box 1 - Shopping Basket.png" alt="Shopping Basket">
+        </div>
+        <div class="box-counter">
+          <div class="counter-value" id="box1-count">0</div>
+        </div>
+      </div>
+      <div class="box-wrapper">
+        <div class="token-box" data-box="2">
+          <img class="box-icon" src="assets/Box 2 - Garden.png" alt="Garden">
+        </div>
+        <div class="box-counter">
+          <div class="counter-value" id="box2-count">0</div>
+        </div>
+      </div>
+      <div class="box-wrapper">
+        <div class="token-box" data-box="3">
+          <img class="box-icon" src="assets/Box 3 - On your Plate.png" alt="On your Plate">
+        </div>
+        <div class="box-counter">
+          <div class="counter-value" id="box3-count">0</div>
+        </div>
+      </div>
+      <div class="box-wrapper">
+        <div class="token-box" data-box="4">
+          <img class="box-icon" src="assets/Box 4 - As your meal.png" alt="As your meal">
+        </div>
+        <div class="box-counter">
+          <div class="counter-value" id="box4-count">0</div>
+        </div>
+      </div>
+      <div class="box-wrapper">
+        <div class="token-box" data-box="5">
+          <img class="box-icon" src="assets/Box 5 - As a Snack.png" alt="As a Snack">
+        </div>
+        <div class="box-counter">
+          <div class="counter-value" id="box5-count">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden — kept for Firestore sync compatibility -->
+    <div id="total-tokens" style="display:none">0</div>
+
+  </div><!-- /.boxes-container -->
+
+  <script src="token-boxes-standalone.js"></script>
+  <script src="patch-widget-app.js"></script>
+  <script type="module" src="./widget-config.js"></script>
+  <script type="module">
+    import { startBoxTotaliserListener } from './patch-widget-listener.js';
+
+    function updateBoxesUI({ boxCounts, total, isUpdate, delta }) {
+      if (window.JOM26TokenBoxes && typeof window.JOM26TokenBoxes.syncFromFirestore === 'function') {
+        window.JOM26TokenBoxes.syncFromFirestore(boxCounts, total);
+      } else {
+        for (let i = 1; i <= 5; i++) {
+          const el = document.getElementById(`box${i}-count`);
+          if (el) el.innerText = (boxCounts[i] || 0).toLocaleString();
+        }
+        const totalEl = document.getElementById('total-tokens');
+        if (totalEl) totalEl.innerText = total.toLocaleString();
+      }
+
+      if (isUpdate && delta && window.tokenBoxes &&
+          typeof window.tokenBoxes.triggerAnimationFromFirestore === 'function') {
+        for (const [boxNum, amount] of Object.entries(delta)) {
+          window.tokenBoxes.triggerAnimationFromFirestore(parseInt(boxNum), amount);
+        }
+      }
+    }
+
+    startBoxTotaliserListener(updateBoxesUI);
+  </script>
+</body>
+</html>
