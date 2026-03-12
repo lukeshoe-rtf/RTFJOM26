@@ -137,7 +137,7 @@ var SHARE_URL  = 'https://foodwiseleeds.org/project/just-one-more';
 function showShareToast(platform) {
   var toast = document.getElementById('share-toast');
   if (!toast) return;
-  toast.textContent = 'Message copied \u2014 paste it into your ' + platform + ' post!';
+  toast.textContent = 'Message copied to clipboard \u2014 paste it into your ' + platform + ' post!';
   toast.style.display = 'block';
   setTimeout(function () { toast.style.display = 'none'; }, 4000);
 }
@@ -158,59 +158,46 @@ function copyShareText(platform) {
 }
 
 /**
- * Facebook — sharer.php only reliably accepts the URL; the `quote`
- * parameter is ignored by most browsers / Facebook versions.
- * We copy the message to clipboard so the user can paste it.
+ * Facebook — sharer.php only accepts a URL.  Facebook removed support
+ * for pre-filling post text (the old `quote` param is ignored).
+ * We copy the message to clipboard and open the share dialog so the
+ * user can paste the text into their post.
  */
 function shareToFacebook() {
-  copyShareText('Facebook');
-  window.open(
-    'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(SHARE_URL),
-    '_blank'
-  );
+  copyShareText('Facebook').then(function () {
+    window.open(
+      'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(SHARE_URL),
+      '_blank'
+    );
+  });
 }
 
 /**
- * Instagram — no web-share URL exists.
- * Mobile: use the Web Share API with the campaign logo attached.
- * Desktop: copy message to clipboard, then open Instagram.
+ * Instagram — no web-share or compose URL exists.
+ * We always copy the message to clipboard and open Instagram so
+ * the user can create a new post and paste the text.
+ * (We intentionally skip the Web Share API because on desktop it
+ * opens the generic OS share dialog rather than Instagram.)
  */
 function shareToInstagram() {
-  if (navigator.share) {
-    fetch('./assets/Just-One-More-logo.png')
-      .then(function (r) { return r.blob(); })
-      .then(function (blob) {
-        var file = new File([blob], 'just-one-more-logo.png', { type: 'image/png' });
-        var data = (navigator.canShare && navigator.canShare({ files: [file] }))
-          ? { text: SHARE_TEXT, url: SHARE_URL, files: [file] }
-          : { text: SHARE_TEXT, url: SHARE_URL };
-        return navigator.share(data);
-      })
-      .catch(function () {
-        copyShareText('Instagram');
-        window.open('https://www.instagram.com/', '_blank');
-      });
-  } else {
-    copyShareText('Instagram');
+  copyShareText('Instagram').then(function () {
     window.open('https://www.instagram.com/', '_blank');
-  }
+  });
 }
 
 /**
- * LinkedIn — the newer share-offsite endpoint only accepts a URL.
- * The older shareArticle endpoint supports title / summary params
- * but LinkedIn may still ignore them.  We copy the message to
- * clipboard as a reliable fallback.
+ * LinkedIn — the sharing/share-offsite endpoint only accepts a URL.
+ * LinkedIn removed support for pre-filling post text.
+ * We copy the message to clipboard and open the share dialog so the
+ * user can paste the text into their post.
  */
 function shareToLinkedIn() {
-  copyShareText('LinkedIn');
-  window.open(
-    'https://www.linkedin.com/shareArticle?mini=true'
-    + '&url='     + encodeURIComponent(SHARE_URL)
-    + '&title='   + encodeURIComponent('Just One More Veg Pledge')
-    + '&summary=' + encodeURIComponent(SHARE_TEXT),
-    '_blank'
-  );
+  copyShareText('LinkedIn').then(function () {
+    window.open(
+      'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(SHARE_URL),
+      '_blank'
+    );
+  });
 }
 
 // Types that are eligible for the shout-out feature
