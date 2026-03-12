@@ -84,6 +84,10 @@ const widgetState = {
   formData: {}
 };
 
+// End-card auto-reset timers
+var endCardResetTimer = null;
+var endCardCountdownInterval = null;
+
 /**
  * Step navigation
  */
@@ -102,6 +106,14 @@ function prevStep() {
 }
 
 function showStep(stepNumber) {
+  // If navigating away from the end card, cancel its countdown
+  if (stepNumber !== 4 && endCardResetTimer) {
+    clearTimeout(endCardResetTimer);
+    clearInterval(endCardCountdownInterval);
+    endCardResetTimer = null;
+    endCardCountdownInterval = null;
+  }
+
   document.querySelectorAll('.form-step').forEach(step => {
     step.classList.remove('active');
   });
@@ -110,6 +122,95 @@ function showStep(stepNumber) {
 
   // Notify parent of new content height so the iframe resizes dynamically
   setTimeout(notifyHeight, 50);
+}
+
+/**
+ * Shared auto-message and URL used by all social-share helpers.
+ */
+var SHARE_TEXT = 'Join the Just One More Campaign and make your Veg Pledge today! foodwiseleeds.org/project/just-one-more #justonemore';
+var SHARE_URL  = 'https://foodwiseleeds.org/project/just-one-more';
+
+/**
+ * Show a toast telling the user the message has been copied to their
+ * clipboard, personalised with the platform name.
+ */
+function showShareToast(platform) {
+  var toast = document.getElementById('share-toast');
+  if (!toast) return;
+  toast.textContent = 'Message copied \u2014 paste it into your ' + platform + ' post!';
+  toast.style.display = 'block';
+  setTimeout(function () { toast.style.display = 'none'; }, 4000);
+}
+
+/**
+ * Copy the share message to the clipboard, then show the toast.
+ * Returns a Promise so callers can chain after the copy completes.
+ */
+function copyShareText(platform) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(SHARE_TEXT).then(function () {
+      showShareToast(platform);
+    });
+  }
+  // Fallback: still show toast even if clipboard API unavailable
+  showShareToast(platform);
+  return Promise.resolve();
+}
+
+/**
+ * Facebook — sharer.php only reliably accepts the URL; the `quote`
+ * parameter is ignored by most browsers / Facebook versions.
+ * We copy the message to clipboard so the user can paste it.
+ */
+function shareToFacebook() {
+  copyShareText('Facebook');
+  window.open(
+    'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(SHARE_URL),
+    '_blank'
+  );
+}
+
+/**
+ * Instagram — no web-share URL exists.
+ * Mobile: use the Web Share API with the campaign logo attached.
+ * Desktop: copy message to clipboard, then open Instagram.
+ */
+function shareToInstagram() {
+  if (navigator.share) {
+    fetch('./assets/Just-One-More-logo.png')
+      .then(function (r) { return r.blob(); })
+      .then(function (blob) {
+        var file = new File([blob], 'just-one-more-logo.png', { type: 'image/png' });
+        var data = (navigator.canShare && navigator.canShare({ files: [file] }))
+          ? { text: SHARE_TEXT, url: SHARE_URL, files: [file] }
+          : { text: SHARE_TEXT, url: SHARE_URL };
+        return navigator.share(data);
+      })
+      .catch(function () {
+        copyShareText('Instagram');
+        window.open('https://www.instagram.com/', '_blank');
+      });
+  } else {
+    copyShareText('Instagram');
+    window.open('https://www.instagram.com/', '_blank');
+  }
+}
+
+/**
+ * LinkedIn — the newer share-offsite endpoint only accepts a URL.
+ * The older shareArticle endpoint supports title / summary params
+ * but LinkedIn may still ignore them.  We copy the message to
+ * clipboard as a reliable fallback.
+ */
+function shareToLinkedIn() {
+  copyShareText('LinkedIn');
+  window.open(
+    'https://www.linkedin.com/shareArticle?mini=true'
+    + '&url='     + encodeURIComponent(SHARE_URL)
+    + '&title='   + encodeURIComponent('Just One More Veg Pledge')
+    + '&summary=' + encodeURIComponent(SHARE_TEXT),
+    '_blank'
+  );
 }
 
 // Types that are eligible for the shout-out feature
@@ -315,14 +416,14 @@ document.getElementById('pledge-form').addEventListener('submit', async (e) => {
     }, '*');
   }
   
-  document.getElementById('awarded-tokens').innerText = tokens;
-  document.getElementById('success-modal').classList.add('active');
-
+  // Reset form fields and state immediately (step 4 has no inputs)
   document.getElementById('pledge-form').reset();
-  widgetState.currentStep = 1;
   widgetState.userType = null;
   widgetState.formData = {};
-  showStep(1);
+
+  // Show the end card — iframe height will expand to fit it
+  showStep(4);
+  startEndCardCountdown();
 
   // Scroll the parent page to the top so the token animation is visible
   scrollParentToTop();
@@ -355,20 +456,32 @@ function scrollParentToTop() {
 }
 
 /**
- * Modal functions
+ * End-card countdown — auto-resets the form to step 1 after 15 seconds.
+ * Displays a live countdown in #reset-countdown.
  */
-function showSuccessModal(tokens, boxNumber) {
-  document.getElementById('awarded-tokens').textContent = tokens;
-  document.getElementById('success-modal').classList.add('active');
-}
+function startEndCardCountdown() {
+  var seconds = 15;
+  var countdownEl = document.getElementById('reset-countdown');
 
-function closeSuccessModal() {
-  document.getElementById('success-modal').classList.remove('active');
-}
+  // Clear any leftover timers from a previous submission
+  if (endCardResetTimer) clearTimeout(endCardResetTimer);
+  if (endCardCountdownInterval) clearInterval(endCardCountdownInterval);
 
-function watchTokenFall() {
-  closeSuccessModal();
-  scrollParentToTop();
+  if (countdownEl) countdownEl.textContent = seconds;
+
+  endCardCountdownInterval = setInterval(function () {
+    seconds -= 1;
+    if (countdownEl) countdownEl.textContent = seconds;
+    if (seconds <= 0) clearInterval(endCardCountdownInterval);
+  }, 1000);
+
+  endCardResetTimer = setTimeout(function () {
+    clearInterval(endCardCountdownInterval);
+    endCardResetTimer = null;
+    endCardCountdownInterval = null;
+    widgetState.currentStep = 1;
+    showStep(1);
+  }, 15000);
 }
 
 // Listen for messages from veg patch widget
