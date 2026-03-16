@@ -6,7 +6,7 @@
  */
 
 import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, getDocs, query, orderBy }
+import { getFirestore, collection, getDocs, query, orderBy, doc, getDoc, setDoc }
                                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
                                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -107,6 +107,7 @@ onAuthStateChanged(auth, async (user) => {
   // Add / remove admin users in Firebase Console → Authentication → Users.
   showDashboard(user.email);
   await loadSubmissions();
+  loadCelebrationConfig();
 });
 
 function showLogin() {
@@ -384,6 +385,50 @@ function downloadCSV(rows, filename) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Celebration checkpoint config
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadCelebrationConfig() {
+  try {
+    const snap = await getDoc(doc(db, 'public', 'celebration-config'));
+    const data = snap.exists() ? snap.data() : {};
+    document.getElementById('mode1-enabled').checked   = data.mode1_enabled   ?? false;
+    document.getElementById('mode1-threshold').value    = data.mode1_threshold ?? 25;
+    document.getElementById('mode2-enabled').checked    = data.mode2_enabled   ?? false;
+    document.getElementById('mode2-threshold').value    = data.mode2_threshold ?? 100;
+  } catch (err) {
+    console.error('Failed to load celebration config:', err);
+  }
+}
+
+document.getElementById('save-celebration-btn').addEventListener('click', async () => {
+  const btn    = document.getElementById('save-celebration-btn');
+  const status = document.getElementById('celebration-save-status');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const config = {
+    mode1_enabled:   document.getElementById('mode1-enabled').checked,
+    mode1_threshold: parseInt(document.getElementById('mode1-threshold').value) || 25,
+    mode2_enabled:   document.getElementById('mode2-enabled').checked,
+    mode2_threshold: parseInt(document.getElementById('mode2-threshold').value) || 100,
+  };
+
+  try {
+    await setDoc(doc(db, 'public', 'celebration-config'), config);
+    status.textContent = '✓ Saved!';
+    status.style.color = '#2E7D32';
+  } catch (err) {
+    status.textContent = 'Error saving';
+    status.style.color = '#C62828';
+    console.error('Failed to save celebration config:', err);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Save';
+  setTimeout(() => { status.textContent = ''; }, 3000);
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
