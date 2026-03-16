@@ -38,24 +38,24 @@
     }
 
     /* ── Widget container ────────────────────────────────────────────────
-       Exact spec: 1284 × 374 px, transparent.
-       position:absolute removes it from normal flow so its fixed 374 px
+       Exact spec: 1284 × 514 px, transparent.
+       position:absolute removes it from normal flow so its fixed 514 px
        layout height never pushes the #patch-scale-root open, preventing
        the "empty space below" bug when scale > 1.
-       padding-top  = sky depth (191 px) — tokens fall through this space.
+       padding-top  = sky depth (331 px) — tokens fall through this space.
        padding-bottom = shadow room (10 px).
        Using padding (not margin on child) prevents CSS margin-collapse.
-       Content area = 374 − 191 − 10 = 173 px = exact box height.
-       Canvas at position:absolute; top:0 anchors to y=0, covering all 374 px.
+       Content area = 514 − 331 − 10 = 173 px = exact box height.
+       Canvas at position:absolute; top:0 anchors to y=0, covering all 514 px.
     ─────────────────────────────────────────────────────────────────── */
     .boxes-container {
       position: absolute;  /* out of flow — root height is set by JS */
       top: 0;
       left: 0;
       width: 1284px;
-      height: 374px;
+      height: 514px;
       background: transparent;
-      padding-top: 191px;
+      padding-top: 331px;
       padding-bottom: 10px;
       overflow: visible;
       transform-origin: top left; /* scale anchor — JS sets transform:scale() */
@@ -145,13 +145,39 @@
       line-height: 1;
     }
 
+    /* ── Box jiggle animation — triggered when a token lands ──────────────
+       Mixes squash/stretch, rotation, and horizontal translation for a
+       cartoony "something just dropped in" jitter effect.
+    ─────────────────────────────────────────────────────────────────── */
+    @keyframes boxJiggle {
+      0%   { transform: scaleX(1)    scaleY(1)    rotate(0deg)    translateX(0);      }
+      8%   { transform: scaleX(1.14) scaleY(0.86) rotate(-2deg)   translateX(-3px);   } /* big squash + tilt left  */
+      18%  { transform: scaleX(0.90) scaleY(1.12) rotate(2.5deg)  translateX(4px);    } /* stretch + tilt right    */
+      28%  { transform: scaleX(1.10) scaleY(0.91) rotate(-1.8deg) translateX(-3px);   } /* squash + tilt left      */
+      38%  { transform: scaleX(0.94) scaleY(1.07) rotate(1.5deg)  translateX(2px);    } /* stretch + tilt right    */
+      48%  { transform: scaleX(1.06) scaleY(0.95) rotate(-1deg)   translateX(-2px);   } /* smaller squash          */
+      58%  { transform: scaleX(0.97) scaleY(1.04) rotate(0.8deg)  translateX(1.5px);  } /* smaller stretch         */
+      68%  { transform: scaleX(1.03) scaleY(0.97) rotate(-0.5deg) translateX(-1px);   } /* settling squash         */
+      78%  { transform: scaleX(0.99) scaleY(1.02) rotate(0.3deg)  translateX(0.5px);  } /* settling stretch        */
+      88%  { transform: scaleX(1.01) scaleY(0.99) rotate(-0.1deg) translateX(-0.3px); } /* almost still            */
+      100% { transform: scaleX(1)    scaleY(1)    rotate(0deg)    translateX(0);      } /* rest                    */
+    }
+
+    .box-wrapper {
+      transform-origin: bottom center; /* squash from the base */
+    }
+
+    .box-wrapper.bouncing {
+      animation: boxJiggle 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
     /* ── JOM logo — backmost layer in the sky area ───────────────────────── */
     #jom-logo {
       position: absolute;
-      top: 15px;
+      top: 60px;
       left: 50%;
       transform: translateX(-50%);
-      height: 160px;
+      height: 200px;
       width: auto;
       z-index: 0;
       opacity: 0.7;
@@ -247,7 +273,7 @@
   <script>
     (function () {
       var DESIGN_W = 1284;
-      var DESIGN_H = 374;
+      var DESIGN_H = 514;
       var PADDING  = 10;   // px of transparent space on each side for drop-shadow
 
       function scaleWidget() {
@@ -282,7 +308,7 @@
 
   <script type="module" src="./widget-config.js"></script>
   <script type="module">
-    import { startBoxTotaliserListener } from './patch-widget-listener.js';
+    import { startBoxTotaliserListener, startCelebrationConfigListener } from './patch-widget-listener.js';
 
     function updateBoxesUI({ boxCounts, total, isUpdate, delta }) {
       if (window.JOM26TokenBoxes && typeof window.JOM26TokenBoxes.syncFromFirestore === 'function') {
@@ -305,6 +331,13 @@
     }
 
     startBoxTotaliserListener(updateBoxesUI);
+
+    // ── Celebration config — real-time sync from admin console ────────
+    startCelebrationConfigListener((config) => {
+      if (window.JOM26TokenBoxes && typeof window.JOM26TokenBoxes.setCelebrationConfig === 'function') {
+        window.JOM26TokenBoxes.setCelebrationConfig(config);
+      }
+    });
   </script>
 </body>
 </html>

@@ -48,6 +48,19 @@ export function startBoxTotaliserListener(updateFn) {
   });
 }
 
+export function startCelebrationConfigListener(updateFn) {
+  const ref = doc(db, 'public', 'celebration-config');
+  return onSnapshot(ref, (snap) => {
+    const data = snap.data() || {};
+    updateFn({
+      mode1Enabled:   data.mode1_enabled   ?? false,
+      mode1Threshold: data.mode1_threshold ?? 25,
+      mode2Enabled:   data.mode2_enabled   ?? false,
+      mode2Threshold: data.mode2_threshold ?? 100
+    });
+  });
+}
+
 export async function fetchSubmissionCount() {
   // Reads submission_count from public/totaliser — no auth required.
   // The submissions collection itself now requires auth for reads (security rule),
